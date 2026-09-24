@@ -1,0 +1,251 @@
+-- ===================================================
+--                    SIM HUB (7 Functions)
+-- ===================================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "SIM HUB",
+   LoadingTitle = "SIM HUB Loading...",
+   LoadingSubtitle = "by Assistant",
+   ConfigurationSaving = { Enabled = false },
+   Discord = { Enabled = false },
+   KeySystem = false
+})
+
+local MainTab = Window:CreateTab("Main Features", 4483362458)
+local Remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+
+-- รายชื่อบอสทั้งหมด
+local BossList = {"Coyote", "EvilMom", "Toji", "Decayer"}
+
+-- ตัวแปรสถานะ
+local AutoBuy = false
+local AutoAttackAll = false
+local AutoAttackSingle = false
+local SelectedAttackBoss = "Coyote"
+local AutoEnterAll = false
+
+local AutoEnterCoyote = false
+local AutoEnterEvilMom = false
+local AutoEnterToji = false
+local AutoEnterDecayer = false
+
+local AttackDelay = 0.1
+
+-- ===================================================
+-- ระบบ Anti-AFK (ป้องกันการถูกเตะออกจากเกม)
+-- ===================================================
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new(0, 0))
+end)
+
+-- ===================================================
+-- ฟังก์ชันที่ 1: ซื้อของทั้งหมด (Buy All Shop)
+-- ===================================================
+MainTab:CreateSection("1. ซื้อของ (Shop System)")
+
+MainTab:CreateToggle({
+   Name = "Auto Buy All Shop (ซื้อของทั้งหมด)",
+   CurrentValue = false,
+   Flag = "AutoBuyToggle",
+   Callback = function(Value)
+      AutoBuy = Value
+      task.spawn(function()
+         while AutoBuy do
+            pcall(function()
+               Remotes:WaitForChild("BuyAllShopRemote"):FireServer()
+            end)
+            task.wait(1)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 2: ตีบอสทั้งหมด (WorldBossClickDamage All)
+-- ===================================================
+MainTab:CreateSection("2. ตีบอสทั้งหมด (Attack All Bosses)")
+
+MainTab:CreateToggle({
+   Name = "Auto Attack ALL Bosses (ตีบอสทุกตัวพร้อมกัน)",
+   CurrentValue = false,
+   Flag = "AutoAttackAllToggle",
+   Callback = function(Value)
+      AutoAttackAll = Value
+      task.spawn(function()
+         while AutoAttackAll do
+            for _, bossName in ipairs(BossList) do
+               if not AutoAttackAll then break end
+               pcall(function()
+                  Remotes:WaitForChild("WorldBossClickDamageRemote"):FireServer(bossName)
+               end)
+            end
+            task.wait(AttackDelay)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 3: ตีบอสเฉพาะตัว (WorldBossClickDamage Single)
+-- ===================================================
+MainTab:CreateSection("3. ตีบอสเฉพาะตัว (Attack Specific Boss)")
+
+MainTab:CreateDropdown({
+   Name = "เลือกบอสที่ต้องการตี",
+   Options = BossList,
+   CurrentOption = {"Coyote"},
+   MultipleOptions = false,
+   Flag = "AttackBossDropdown",
+   Callback = function(Option)
+      SelectedAttackBoss = Option[1]
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Attack Selected Boss (ตีบอสที่เลือก)",
+   CurrentValue = false,
+   Flag = "AutoAttackSingleToggle",
+   Callback = function(Value)
+      AutoAttackSingle = Value
+      task.spawn(function()
+         while AutoAttackSingle do
+            pcall(function()
+               Remotes:WaitForChild("WorldBossClickDamageRemote"):FireServer(SelectedAttackBoss)
+            end)
+            task.wait(AttackDelay)
+         end
+      end)
+   end,
+})
+
+MainTab:CreateSlider({
+   Name = "ความเร็วในการกดตีบอส (ยิ่งน้อยยิ่งเร็ว)",
+   Range = {0.01, 1},
+   Increment = 0.01,
+   Suffix = "วินาที",
+   CurrentValue = 0.1,
+   Flag = "AttackDelaySlider",
+   Callback = function(Value)
+      AttackDelay = Value
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 4: เข้าห้องบอสทั้งหมด (Enter All Boss Arenas)
+-- ===================================================
+MainTab:CreateSection("4. เข้าห้องบอสทั้งหมด (Enter All Arenas)")
+
+MainTab:CreateToggle({
+   Name = "Auto Enter ALL Boss Arenas (วนเข้าห้องบอสทั้งหมด)",
+   CurrentValue = false,
+   Flag = "AutoEnterAllToggle",
+   Callback = function(Value)
+      AutoEnterAll = Value
+      task.spawn(function()
+         while AutoEnterAll do
+            for _, bossName in ipairs(BossList) do
+               if not AutoEnterAll then break end
+               pcall(function()
+                  Remotes:WaitForChild("EnterBossArenaRemote"):FireServer(bossName)
+               end)
+               task.wait(0.5)
+            end
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 5: เข้าห้องบอส Coyote
+-- ===================================================
+MainTab:CreateSection("5. เข้าห้องบอส Coyote")
+
+MainTab:CreateToggle({
+   Name = "Auto Enter Coyote Arena",
+   CurrentValue = false,
+   Flag = "AutoEnterCoyoteToggle",
+   Callback = function(Value)
+      AutoEnterCoyote = Value
+      task.spawn(function()
+         while AutoEnterCoyote do
+            pcall(function()
+               Remotes:WaitForChild("EnterBossArenaRemote"):FireServer("Coyote")
+            end)
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 6: เข้าห้องบอส EvilMom & Toji
+-- ===================================================
+MainTab:CreateSection("6. เข้าห้องบอส EvilMom / Toji")
+
+MainTab:CreateToggle({
+   Name = "Auto Enter EvilMom Arena",
+   CurrentValue = false,
+   Flag = "AutoEnterEvilMomToggle",
+   Callback = function(Value)
+      AutoEnterEvilMom = Value
+      task.spawn(function()
+         while AutoEnterEvilMom do
+            pcall(function()
+               Remotes:WaitForChild("EnterBossArenaRemote"):FireServer("EvilMom")
+            end)
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Enter Toji Arena",
+   CurrentValue = false,
+   Flag = "AutoEnterTojiToggle",
+   Callback = function(Value)
+      AutoEnterToji = Value
+      task.spawn(function()
+         while AutoEnterToji do
+            pcall(function()
+               Remotes:WaitForChild("EnterBossArenaRemote"):FireServer("Toji")
+            end)
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 7: เข้าห้องบอส Decayer
+-- ===================================================
+MainTab:CreateSection("7. เข้าห้องบอส Decayer")
+
+MainTab:CreateToggle({
+   Name = "Auto Enter Decayer Arena",
+   CurrentValue = false,
+   Flag = "AutoEnterDecayerToggle",
+   Callback = function(Value)
+      AutoEnterDecayer = Value
+      task.spawn(function()
+         while AutoEnterDecayer do
+            pcall(function()
+               Remotes:WaitForChild("EnterBossArenaRemote"):FireServer("Decayer")
+            end)
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+Rayfield:Notify({
+   Title = "SIM HUB Loaded!",
+   Content = "สคริปต์ SIM HUB (7 ฟังก์ชัน) พร้อมใช้งานแล้ว",
+   Duration = 5,
+   Image = 4483362458,
+})
